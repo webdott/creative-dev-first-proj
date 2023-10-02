@@ -1,20 +1,24 @@
-const path = require("path");
-const { DefinePlugin } = require("webpack");
-
-const { CleanWebpackPlugin } = require("clean-webpack-plugin");
-const CopyWebpackPlugin = require("copy-webpack-plugin");
-const MiniCssExtractPlugin = require("mini-css-extract-plugin");
-const ImageMinimizerPlugin = require("image-minimizer-webpack-plugin");
-const { merge } = require("webpack-merge");
+import path from "path";
+import pkg from "webpack";
+import { CleanWebpackPlugin } from "clean-webpack-plugin";
+import CopyWebpackPlugin from "copy-webpack-plugin";
+import MiniCssExtractPlugin from "mini-css-extract-plugin";
+import ImageMinimizerPlugin from "image-minimizer-webpack-plugin";
+import { fileURLToPath } from "url";
 
 const IS_DEVELOPMENT = process.env.NODE_ENV === "dev";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const dirApp = path.join(__dirname, "app");
 const dirShared = path.join(__dirname, "shared");
 const dirStyles = path.join(__dirname, "styles");
 const dirNode = "node_modules";
 
-module.exports = {
+const { DefinePlugin } = pkg;
+
+const config = {
     entry: [path.join(dirApp, "index.js"), path.join(dirStyles, "index.scss")],
 
     resolve: {
@@ -121,3 +125,5 @@ module.exports = {
         ],
     },
 };
+
+export default config;
