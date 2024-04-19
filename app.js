@@ -3,13 +3,13 @@ import * as prismicH from "@prismicio/helpers";
 import express from "express";
 import errorHandler from "errorhandler";
 import path from "path";
-import {fileURLToPath} from "url";
+import { fileURLToPath } from "url";
 import bodyParser from "body-parser";
 import logger from "morgan";
 import UAParser from "ua-parser-js";
 import methodOverride from "method-override";
 
-import {client} from "./config/prismicConfig.js";
+import { client } from "./config/prismicConfig.js";
 
 const app = express();
 const port = 3000;
@@ -22,7 +22,7 @@ app.set("view engine", "pug");
 
 const handleLinkResolver = (doc) => {
     if (doc.type === "product") {
-        return `/detail/${doc.slug}`;
+        return `/detail/${doc.uid}`;
     } else if (doc.type === "collections" || doc === "collections") {
         return `/collections`;
     } else if (doc.type === "about") {
@@ -35,7 +35,7 @@ const handleLinkResolver = (doc) => {
 app.use(errorHandler());
 app.use(logger("dev"));
 app.use(bodyParser.json());
-app.use(bodyParser.urlencoded({extended: false}));
+app.use(bodyParser.urlencoded({ extended: false }));
 app.use(methodOverride());
 app.use(express.static(path.join(__dirname, "public")));
 
@@ -44,7 +44,7 @@ app.use((req, res, next) => {
         prismic,
     };
 
-    const ua = UAParser(req.headers['user-agent']);
+    const ua = UAParser(req.headers["user-agent"]);
 
     res.locals.isDesktop = ua.device.type === undefined;
     res.locals.isPhone = ua.device.type === "mobile";
@@ -58,72 +58,76 @@ app.use((req, res, next) => {
 });
 
 const getEssentials = async () => {
-    const [meta, preloader, navigation] = await Promise.all([
-        client.getSingle("metadata"),
-        client.getSingle("preloader"),
-        client.getSingle("navigation"),
-    ]);
-
-    return {meta, preloader, navigation};
-};
-
-app.get("/", async (req, res) => {
-    const [home, {results: collections}, {meta, preloader, navigation}] =
+    const [about, home, meta, preloader, navigation, { results: collections }] =
         await Promise.all([
+            client.getSingle("about"),
             client.getSingle("home"),
+            client.getSingle("metadata"),
+            client.getSingle("preloader"),
+            client.getSingle("navigation"),
             client.getByType("collection", {
                 fetchLinks: "product.image",
             }),
-            getEssentials(),
         ]);
 
+    const assets = [];
+
+    home.data.gallery.forEach((item) => assets.push(item.image.url));
+    about.data.gallery.forEach((item) => assets.push(item.image.url));
+
+    about.data.body.forEach((section) => {
+        if (section.slice_type === "gallery") {
+            section.items.forEach((item) => assets.push(item.image.url));
+        }
+    });
+
+    collections.forEach((collection) => {
+        collection.data.products.forEach((item) =>
+            assets.push(item.products_product.data.image.url)
+        );
+    });
+
+    return { assets, about, home, meta, preloader, navigation, collections };
+};
+
+app.get("/", async (req, res) => {
+    const [defaults] = await Promise.all([getEssentials()]);
+
     res.render("pages/home", {
-        home,
-        collections,
-        meta,
-        preloader,
-        navigation,
+        ...defaults,
     });
 });
 
 app.get("/about", async (req, res) => {
-    const [about, {meta, preloader, navigation}] = await Promise.all([
+    const [about, defaults] = await Promise.all([
         client.getSingle("about"),
         getEssentials(),
     ]);
-    res.render("pages/about", {about, meta, preloader, navigation});
+    res.render("pages/about", { about, ...defaults });
 });
 
 app.get("/detail/:uid", async (req, res) => {
-    const [product, {meta, preloader, navigation}] = await Promise.all([
+    const [product, defaults] = await Promise.all([
         client.getByUID("product", req.params.uid, {
             fetchLinks: "collection.title",
         }),
         getEssentials(),
     ]);
 
-    res.render("pages/detail", {product, meta, preloader, navigation});
+    res.render("pages/detail", { product, ...defaults });
 });
 
 app.get("/collections", async (req, res) => {
-    const [
-        {results: collectionResults},
-        home,
-        {meta, preloader, navigation},
-    ] = await Promise.all([
+    const [{ results: collectionResults }, defaults] = await Promise.all([
         client.getByType("collection", {
             fetchLinks: "product.image",
         }),
-        client.getSingle("home"),
         getEssentials(),
     ]);
 
     res.render("pages/collections", {
         collections: collectionResults,
-        home,
-        meta,
-        preloader,
-        navigation,
+        ...defaults,
     });
 });
 

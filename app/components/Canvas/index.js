@@ -1,29 +1,28 @@
-import {Camera, Renderer, Transform} from "ogl";
+import { Camera, Renderer, Transform } from "ogl";
 
 import Home from "./Home/index.js";
 import About from "./About/index.js";
+import Collections from "./Collections/index.js";
 
 export default class Canvas {
-    constructor({template}) {
+    constructor({ template }) {
         this.template = template;
 
         this.x = {
             start: 0,
             distance: 0,
-            end: 0
-        }
+            end: 0,
+        };
 
         this.y = {
             start: 0,
             distance: 0,
-            end: 0
-        }
+            end: 0,
+        };
 
         this.createRenderer();
         this.createScene();
         this.createCamera();
-
-        this.onChangeEnd(this.template);
 
         this.onResize();
     }
@@ -44,23 +43,27 @@ export default class Canvas {
     }
 
     createAbout() {
-        this.about = new About(
-            {
-                gl: this.gl,
-                scene: this.scene,
-                sizes: this.sizes
-            }
-        );
+        this.about = new About({
+            gl: this.gl,
+            scene: this.scene,
+            sizes: this.sizes,
+        });
     }
 
     createHome() {
-        this.home = new Home(
-            {
-                gl: this.gl,
-                scene: this.scene,
-                sizes: this.sizes
-            }
-        );
+        this.home = new Home({
+            gl: this.gl,
+            scene: this.scene,
+            sizes: this.sizes,
+        });
+    }
+
+    createCollections() {
+        this.collections = new Collections({
+            gl: this.gl,
+            scene: this.scene,
+            sizes: this.sizes,
+        });
     }
 
     destroyAbout() {
@@ -77,6 +80,13 @@ export default class Canvas {
         this.home = null;
     }
 
+    destroyCollections() {
+        if (!this.collections) return;
+
+        this.collections.destroy();
+        this.collections = null;
+    }
+
     createCamera() {
         this.camera = new Camera(this.gl);
         this.camera.position.z = 5;
@@ -89,7 +99,7 @@ export default class Canvas {
         this.renderer.setSize(window.innerWidth, window.innerHeight);
 
         this.camera.perspective({
-            aspect: window.innerWidth / window.innerHeight
+            aspect: window.innerWidth / window.innerHeight,
         });
 
         const fov = this.camera.fov * (Math.PI / 180);
@@ -98,43 +108,57 @@ export default class Canvas {
 
         this.sizes = {
             height,
-            width
+            width,
         };
 
-        const values = {sizes: this.sizes}
+        const values = { sizes: this.sizes };
 
-        if (this.home)
-            this.home.onResize(values);
+        if (this.home) this.home.onResize(values);
 
-        if (this.about)
-            this.about.onResize(values);
+        if (this.about) this.about.onResize(values);
+
+        if (this.collections) this.collections.onResize(values);
+    }
+
+    onPreloaded() {
+        this.onChangeEnd(this.template);
     }
 
     onChangeStart() {
-        if (this.home) {
-            this.home.hide();
-        }
-
         if (this.about) {
             this.about.hide();
+        }
+
+        if (this.collections) {
+            this.collections.hide();
+        }
+
+        if (this.home) {
+            this.home.hide();
         }
     }
 
     onChangeEnd(template) {
-        if (template === 'home') {
-            this.createHome();
-        } else if (this.home) {
-            this.destroyHome();
+        if (template === "collections") {
+            this.createCollections();
+        } else if (this.collections) {
+            this.destroyCollections();
         }
 
-        if (template === 'about') {
+        if (template === "about") {
             this.createAbout();
         } else if (this.about) {
             this.destroyAbout();
         }
+
+        if (template === "home") {
+            this.createHome();
+        } else if (this.home) {
+            this.destroyHome();
+        }
     }
 
-    onTouchDown = event => {
+    onTouchDown = (event) => {
         this.down = true;
 
         this.x.start = event.touches ? event.touches[0].clientX : event.clientX;
@@ -142,8 +166,8 @@ export default class Canvas {
 
         const values = {
             x: this.x,
-            y: this.y
-        }
+            y: this.y,
+        };
 
         if (this.home) {
             this.home.onTouchDown(values);
@@ -152,9 +176,13 @@ export default class Canvas {
         if (this.about) {
             this.about.onTouchDown(values);
         }
-    }
 
-    onTouchMove = event => {
+        if (this.collections) {
+            this.collections.onTouchDown(values);
+        }
+    };
+
+    onTouchMove = (event) => {
         if (!this.down) return;
 
         const x = event.touches ? event.touches[0].clientX : event.clientX;
@@ -165,8 +193,8 @@ export default class Canvas {
 
         const values = {
             x: this.x,
-            y: this.y
-        }
+            y: this.y,
+        };
 
         if (this.home) {
             this.home.onTouchMove(values);
@@ -175,20 +203,28 @@ export default class Canvas {
         if (this.about) {
             this.about.onTouchMove(values);
         }
-    }
 
-    onTouchUp = event => {
+        if (this.collections) {
+            this.collections.onTouchMove(values);
+        }
+    };
+
+    onTouchUp = (event) => {
         this.down = false;
-        const x = event.changedTouches ? event.changedTouches[0].clientX : event.clientX;
-        const y = event.changedTouches ? event.changedTouches[0].clientY : event.clientY;
+        const x = event.changedTouches
+            ? event.changedTouches[0].clientX
+            : event.clientX;
+        const y = event.changedTouches
+            ? event.changedTouches[0].clientY
+            : event.clientY;
 
         this.x.end = x;
         this.y.end = y;
 
         const values = {
             x: this.x,
-            y: this.y
-        }
+            y: this.y,
+        };
 
         if (this.home) {
             this.home.onTouchUp(values);
@@ -197,7 +233,11 @@ export default class Canvas {
         if (this.about) {
             this.about.onTouchUp(values);
         }
-    }
+
+        if (this.collections) {
+            this.collections.onTouchUp(values);
+        }
+    };
 
     onWheel = (event) => {
         if (this.home) {
@@ -207,8 +247,11 @@ export default class Canvas {
         if (this.about) {
             this.about.onWheel(event);
         }
-    }
 
+        if (this.collections) {
+            this.collections.onWheel(event);
+        }
+    };
 
     /**
      * Loops
@@ -222,6 +265,10 @@ export default class Canvas {
             this.about.update(scroll);
         }
 
-        this.renderer.render({scene: this.scene, camera: this.camera});
+        if (this.collections) {
+            this.collections.update();
+        }
+
+        this.renderer.render({ scene: this.scene, camera: this.camera });
     }
 }

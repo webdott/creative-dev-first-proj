@@ -13,7 +13,7 @@ html {
     color: $color-quarter-spanish-white;
     background-color: $color-contessa;
 
-    @include media('<phone') {
+    @include media("<phone") {
         font-size: calc(100vw / 750 * 10);
     }
 }
@@ -21,7 +21,6 @@ html {
 body {
     @extend %cover;
     @extend %description-16;
-
 
     font-family: $font-suisse-bp;
     position: fixed;
@@ -47,6 +46,12 @@ img {
     @extend %cover;
 
     //position: absolute;
+}
+
+canvas {
+    pointer-events: none;
+    position: relative;
+    z-index: z("canvas");
 }
 
 [data-animation="title"],

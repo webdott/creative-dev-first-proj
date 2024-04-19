@@ -1,18 +1,11 @@
-import {Mesh, Program, Texture} from "ogl";
+import { Mesh, Program, Texture } from "ogl";
 
 import vertex from "../../../shaders/plane-vertex.glsl";
 import fragment from "../../../shaders/plane-fragment.glsl";
 import GSAP from "gsap";
 
 export default class Media {
-    constructor({
-                    element,
-                    geometry,
-                    gl,
-                    scene,
-                    sizes,
-                    index
-                }) {
+    constructor({ element, geometry, gl, scene, sizes, index }) {
         this.gl = gl;
         this.scene = scene;
         this.sizes = sizes;
@@ -26,20 +19,16 @@ export default class Media {
     }
 
     createTexture() {
-        this.texture = new Texture(this.gl);
+        this.elementImg = this.element.querySelector("img");
 
-        this.elementImg = this.element.querySelector('img');
-
-        this.image = new Image();
-        this.image.crossOrigin = 'anonymous';
-        this.image.src = this.elementImg.getAttribute('data-src');
-        this.image.onload = _ => this.texture.image = this.image;
+        this.texture =
+            window.TEXTURES[this.elementImg.getAttribute("data-src")];
     }
 
     createMesh() {
         this.mesh = new Mesh(this.gl, {
             geometry: this.geometry,
-            program: this.program
+            program: this.program,
         });
 
         this.mesh.setParent(this.scene);
@@ -50,13 +39,13 @@ export default class Media {
             vertex,
             fragment,
             uniforms: {
-                uAlpha: {value: 0},
-                tMap: {value: this.texture}
-            }
-        })
+                uAlpha: { value: 0 },
+                tMap: { value: this.texture },
+            },
+        });
     }
 
-    createBounds({sizes}) {
+    createBounds({ sizes }) {
         this.sizes = sizes;
         this.bounds = this.element.getBoundingClientRect();
 
@@ -69,28 +58,38 @@ export default class Media {
      * Animations
      */
     show() {
-        GSAP.fromTo(this.program.uniforms.uAlpha, {
-            value: 0
-        }, {
-            value: 1
-        })
+        GSAP.fromTo(
+            this.program.uniforms.uAlpha,
+            {
+                value: 0,
+            },
+            {
+                value: 1,
+            }
+        );
     }
 
     hide() {
         GSAP.to(this.program.uniforms.uAlpha, {
-            value: 0
-        })
+            value: 0,
+        });
     }
 
     updateRotation() {
-        this.mesh.rotation.z = GSAP.utils.mapRange(-this.sizes.width / 2, this.sizes.width / 2, Math.PI * 0.1, -Math.PI * 0.1, this.mesh.position.x);
+        this.mesh.rotation.z = GSAP.utils.mapRange(
+            -this.sizes.width / 2,
+            this.sizes.width / 2,
+            Math.PI * 0.1,
+            -Math.PI * 0.1,
+            this.mesh.position.x
+        );
     }
 
     /**
      * Events
      */
     onResize(event) {
-        this.extra = 0
+        this.extra = 0;
 
         this.createBounds(event);
     }
@@ -99,7 +98,7 @@ export default class Media {
      * Loops
      */
     updateScale() {
-        const {height, width} = this.sizes;
+        const { height, width } = this.sizes;
 
         this.width = this.bounds.width / window.innerWidth;
         this.height = this.bounds.height / window.innerHeight;
@@ -109,18 +108,25 @@ export default class Media {
     }
 
     updateX(x = 0) {
-        const {width} = this.sizes;
+        const { width } = this.sizes;
         this.x = (this.bounds.left + x) / window.innerWidth;
 
-        this.mesh.position.x = (-width / 2) + (this.mesh.scale.x / 2) + ((this.x) * width) + this.extra;
+        this.mesh.position.x =
+            -width / 2 + this.mesh.scale.x / 2 + this.x * width + this.extra;
     }
 
     updateY(y = 0) {
-        const {height} = this.sizes;
+        const { height } = this.sizes;
         this.y = (this.bounds.top + y) / window.innerHeight;
 
-        this.mesh.position.y = (height / 2) - (this.mesh.scale.y / 2) - ((this.y) * height);
-        this.mesh.position.y += Math.cos((this.mesh.position.x / this.sizes.width) * Math.PI * 0.1) * 40 - 40;
+        this.mesh.position.y =
+            height / 2 - this.mesh.scale.y / 2 - this.y * height;
+        this.mesh.position.y +=
+            Math.cos(
+                (this.mesh.position.x / this.sizes.width) * Math.PI * 0.1
+            ) *
+                40 -
+            40;
     }
 
     update(scroll) {

@@ -1,9 +1,9 @@
-import _ from 'lodash';
+import _ from "lodash";
 
-import Home from 'pages/Home/index.js';
-import About from 'pages/About/index.js';
-import Detail from 'pages/Detail/index.js';
-import Collections from 'pages/Collections/index.js';
+import Home from "pages/Home/index.js";
+import About from "pages/About/index.js";
+import Detail from "pages/Detail/index.js";
+import Collections from "pages/Collections/index.js";
 
 import Preloader from "./components/Preloader.js";
 import Navigation from "./components/Navigation.js";
@@ -13,40 +13,45 @@ import NormalizeWheel from "normalize-wheel";
 
 class App {
     constructor() {
-        console.log('App initialized');
+        console.log("App initialized");
         this.createContent();
 
+        this.createCanvas();
         this.createPreloader();
         this.createNavigation();
-        this.createCanvas();
         this.createPages();
 
         this.addEventListeners();
         this.addLinkListeners();
+
+        this?.onResize();
 
         this.update();
     }
 
     createNavigation() {
         this.navigation = new Navigation({
-            template: this.template
+            template: this.template,
         });
     }
 
     createPreloader() {
-        this.preloader = new Preloader();
-        this.preloader.on('completed', _ => this.onPreloaded());
+        this.preloader = new Preloader({
+            canvas: this.canvas,
+        });
+
+        this.preloader.on("completed", (_) => this.onPreloaded());
     }
 
     createCanvas() {
         this.canvas = new Canvas({
-            template: this.template
+            template: this.template,
         });
     }
 
     createContent() {
-        this.content = document.querySelector('.content');
-        this.template = this.content.getAttribute('data-template');
+        this.content = document.querySelector(".content");
+        this.template = this.content.getAttribute("data-template");
     }
 
     createPages() {
@@ -54,8 +59,8 @@ class App {
             home: new Home(),
             about: new About(),
             detail: new Detail(),
-            collections: new Collections()
-        }
+            collections: new Collections(),
+        };
 
         this.page = this.pages[this.template];
         this.page.create();
@@ -65,9 +70,9 @@ class App {
      * Events
      */
     onPreloaded() {
-        this.preloader?.destroy?.();
+        this.canvas.onPreloaded();
 
-        this.page?.onResize();
+        this?.onResize();
 
         this.page?.show();
     }
@@ -75,11 +80,11 @@ class App {
     onPopState = () => {
         this.onChange({
             url: window.location.pathname,
-            push: false
-        })
-    }
+            push: false,
+        });
+    };
 
-    async onChange({url, push = true}) {
+    async onChange({ url, push = true }) {
         this.canvas.onChangeStart();
         await this.page.hide();
 
@@ -87,24 +92,22 @@ class App {
 
         if (response.status === 200) {
             const html = await response.text();
-            const div = document.createElement('div');
+            const div = document.createElement("div");
 
-            if (push)
-                window.history.pushState({}, '', url);
+            if (push) window.history.pushState({}, "", url);
 
             div.innerHTML = html;
 
-            const divContent = div.querySelector('.content');
+            const divContent = div.querySelector(".content");
 
-            this.template = divContent.getAttribute('data-template');
+            this.template = divContent.getAttribute("data-template");
 
             this.navigation.onChange(this.template);
 
-            this.content.setAttribute('data-template', this.template);
+            this.content.setAttribute("data-template", this.template);
             this.content.innerHTML = divContent.innerHTML;
 
             this.canvas.onChangeEnd(this.template);
-
 
             this.page = this.pages[this.template];
             this.page.create();
@@ -115,7 +118,7 @@ class App {
 
             this.addLinkListeners();
         } else {
-            console.log('ERROR');
+            console.log("ERROR");
         }
     }
 
@@ -124,29 +127,28 @@ class App {
             this.page.onResize();
         }
 
-
         if (this.canvas && this.canvas.onResize) {
             this.canvas.onResize();
         }
-    }
+    };
 
     onTouchDown = (event) => {
         if (this.canvas && this.canvas.onTouchDown) {
             this.canvas.onTouchDown(event);
         }
-    }
+    };
 
     onTouchMove = (event) => {
         if (this.canvas && this.canvas.onTouchMove) {
             this.canvas.onTouchMove(event);
         }
-    }
+    };
 
     onTouchUp = (event) => {
         if (this.canvas && this.canvas.onTouchUp) {
             this.canvas.onTouchUp(event);
         }
-    }
+    };
 
     onWheel = (event) => {
         const normalizeWheel = NormalizeWheel(event);
@@ -158,40 +160,39 @@ class App {
         if (this.page && this.page.onMouseWheel) {
             this.page.onMouseWheel(normalizeWheel);
         }
-    }
+    };
 
     /**
      * Event Listeners
      */
     addEventListeners() {
-        window.addEventListener('mousewheel', this.onWheel);
+        window.addEventListener("mousewheel", this.onWheel);
 
-        window.addEventListener('mousedown', this.onTouchDown);
-        window.addEventListener('mousemove', this.onTouchMove);
-        window.addEventListener('mouseup', this.onTouchUp);
+        window.addEventListener("mousedown", this.onTouchDown);
+        window.addEventListener("mousemove", this.onTouchMove);
+        window.addEventListener("mouseup", this.onTouchUp);
 
-        window.addEventListener('touchstart', this.onTouchDown);
-        window.addEventListener('touchmove', this.onTouchMove);
-        window.addEventListener('touchend', this.onTouchUp);
+        window.addEventListener("touchstart", this.onTouchDown);
+        window.addEventListener("touchmove", this.onTouchMove);
+        window.addEventListener("touchend", this.onTouchUp);
 
-        window.addEventListener('popstate', this.onPopState);
+        window.addEventListener("popstate", this.onPopState);
 
-        window.addEventListener('resize', this.onResize);
-
+        window.addEventListener("resize", this.onResize);
     }
 
     addLinkListeners() {
-        const links = document.querySelectorAll('a');
+        const links = document.querySelectorAll("a");
 
-        _.each(links, link => {
-            link.onclick = event => {
+        _.each(links, (link) => {
+            link.onclick = (event) => {
                 event.preventDefault();
 
-                const {href} = link;
+                const { href } = link;
 
-                this.onChange({url: href});
-            }
-        })
+                this.onChange({ url: href });
+            };
+        });
     }
 
     /**
@@ -206,8 +207,8 @@ class App {
             this.canvas.update(this.page.scroll);
         }
 
-        this.frame = window.requestAnimationFrame(_ => this.update());
+        this.frame = window.requestAnimationFrame((_) => this.update());
     }
 }
 
-new App()
+new App();
